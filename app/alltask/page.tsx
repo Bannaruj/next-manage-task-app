@@ -39,6 +39,35 @@ function AllTaskPage() {
     fetchTask();
   }, []);
 
+  async function handleDeleteTaskClick(id: string, image_url: string) {
+    if (confirm("คุณต้องการลบงานนี้ใช่หรือไม่?")) {
+      //ลบรูปภาพออกจาก storage
+      if (image_url) {
+        const image_name = image_url.split("/").pop() as string;
+        const { data, error } = await supabase.storage
+          .from("task_bk")
+          .remove([image_name]);
+        if (error) {
+          alert("พบปัญหาในการลบรูปภาพ");
+          console.log(error.message);
+          return;
+        }
+      }
+
+      //ลบข้อมูลออกจากตาราง
+      const { data, error } = await supabase
+        .from("task_tb")
+        .delete()
+        .eq("id", id);
+      //ลบข้อมูลออกจากรายการที่แสดงบนจอ
+      if (error) {
+        alert("พบปัญหาในการลบข้อมูล");
+        console.log(error.message);
+        return;
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col w-3/4 mx-auto">
       <div className="flex items-center mt-20 flex-col">
@@ -98,8 +127,20 @@ function AllTaskPage() {
                   {new Date(task.update_at).toLocaleString()}
                 </th>
                 <td className="border border-black p-2 text-center">
-                  <Link href="#">แก้ไข</Link>
-                  <button>ลบ</button>
+                  <Link
+                    href={`/edittask/${task.id}`}
+                    className="mr-2 text-green-500 font-bold cursor-pointer"
+                  >
+                    แก้ไข
+                  </Link>
+                  <button
+                    onClick={() =>
+                      handleDeleteTaskClick(task.id, task.image_url)
+                    }
+                    className="mr-2 text-red-500 font-bold cursor-pointer"
+                  >
+                    ลบ
+                  </button>
                 </td>
               </tr>
             ))}
